@@ -1,0 +1,563 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Audio Chain — UI Mockup</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:        #0f172a;
+      --surface:   #1e293b;
+      --border:    #334155;
+      --muted:     #64748b;
+      --text:      #e2e8f0;
+      --sub:       #94a3b8;
+      --blue:      #38bdf8;
+      --indigo:    #818cf8;
+      --green:     #22c55e;
+      --red:       #ef4444;
+      --accent:    #0ea5e9;
+      --accent-h:  #0284c7;
+      --code-fg:   #a5f3fc;
+      --hash-fg:   #818cf8;
+    }
+
+    body {
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      line-height: 1.6;
+    }
+
+    /* ── layout ─────────────────────────── */
+    #app {
+      max-width: 960px;
+      margin: 0 auto;
+      padding: 32px 16px 64px;
+    }
+
+    /* ── card ───────────────────────────── */
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 24px;
+      margin-bottom: 20px;
+    }
+
+    /* ── typography ─────────────────────── */
+    h1 { font-size: 1.6rem; font-weight: 700; letter-spacing: -0.5px; }
+    .h1-sub { color: var(--muted); margin-top: 6px; font-size: 0.88rem; }
+    .section-title {
+      font-size: 1.05rem; font-weight: 600; color: var(--sub);
+      margin-bottom: 16px;
+    }
+    .label  { font-size: 0.72rem; color: var(--muted); }
+    .value  { font-size: 0.85rem; font-weight: 700; }
+    .mono   { font-family: ui-monospace, monospace; }
+
+    /* ── badge ──────────────────────────── */
+    .badge {
+      display: inline-block;
+      font-size: 0.68rem; font-weight: 700;
+      padding: 2px 9px; border-radius: 99px;
+      vertical-align: middle; margin-left: 8px;
+    }
+    .badge-blue  { background: var(--accent);  color: #fff; }
+    .badge-green { background: var(--green);   color: #fff; }
+    .badge-red   { background: var(--red);     color: #fff; }
+
+    /* ── header ─────────────────────────── */
+    header { margin-bottom: 28px; }
+
+    /* ════════════════════════════════════
+       Section 1 — Uploader
+    ═══════════════════════════════════════ */
+    .drop-zone {
+      border: 2px dashed var(--border);
+      border-radius: 8px;
+      padding: 32px;
+      text-align: center;
+      color: var(--muted);
+      margin-bottom: 14px;
+    }
+    .drop-zone .file-icon {
+      font-size: 2.4rem; margin-bottom: 8px;
+    }
+    .drop-zone .hint { font-size: 0.85rem; margin-bottom: 12px; }
+    .drop-zone .selected {
+      color: var(--blue); font-weight: 600; font-size: 0.95rem;
+      margin-bottom: 8px;
+    }
+    .btn-outline {
+      display: inline-block;
+      padding: 6px 18px;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      font-size: 0.85rem;
+      color: var(--sub);
+      cursor: pointer;
+    }
+    .btn-primary {
+      display: block; width: 100%;
+      padding: 13px;
+      background: var(--accent); color: #fff;
+      border: none; border-radius: 8px;
+      font-size: 1rem; font-weight: 600; cursor: pointer;
+    }
+    .btn-primary.loading { opacity: 0.6; }
+
+    /* ════════════════════════════════════
+       Section 2 — Waveform
+    ═══════════════════════════════════════ */
+    .waveform-wrap {
+      position: relative;
+      background: var(--bg);
+      border-radius: 8px;
+      overflow: hidden;
+    }
+    .waveform-wrap canvas { display: block; width: 100%; height: 140px; }
+    .duration-label {
+      position: absolute; bottom: 8px; right: 12px;
+      font-size: 0.75rem; color: var(--muted);
+    }
+
+    /* ════════════════════════════════════
+       Section 3 — Features + Block info
+    ═══════════════════════════════════════ */
+    .features-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 24px;
+    }
+    @media (max-width: 640px) { .features-grid { grid-template-columns: 1fr; } }
+
+    .feature-list { display: flex; flex-direction: column; gap: 8px; }
+    .feature-item {
+      display: flex; align-items: center; gap: 8px;
+      background: var(--bg); border-radius: 6px;
+      padding: 9px 12px;
+    }
+    .feat-label { font-size: 0.8rem; color: var(--blue);  min-width: 148px; }
+    .feat-desc  { font-size: 0.73rem; color: var(--muted); flex: 1; }
+    .feat-val   { font-size: 0.85rem; font-weight: 700; }
+
+    .block-info { display: flex; flex-direction: column; gap: 8px; }
+    .bi-row {
+      display: flex; flex-direction: column; gap: 3px;
+      background: var(--bg); border-radius: 6px;
+      padding: 9px 12px;
+    }
+    .bi-row .key  { font-size: 0.7rem; color: var(--muted); }
+    .bi-row .val  { font-size: 0.78rem; color: var(--code-fg); }
+    .bi-row .val.hash-val {
+      word-break: break-all; font-size: 0.68rem; color: var(--hash-fg);
+    }
+
+    /* ════════════════════════════════════
+       Section 4 — Blockchain viewer
+    ═══════════════════════════════════════ */
+    .bc-header {
+      display: flex; align-items: center;
+      justify-content: space-between;
+      margin-bottom: 16px;
+    }
+    .bc-header .left { display: flex; align-items: center; gap: 8px; }
+    .btn-refresh {
+      padding: 5px 14px;
+      border: 1px solid var(--border);
+      border-radius: 6px; background: none;
+      color: var(--sub); font-size: 0.85rem; cursor: pointer;
+    }
+
+    .chain-list { display: flex; flex-direction: column; gap: 12px; }
+    .block-card {
+      background: var(--bg);
+      border: 1px solid #1e3a4a;
+      border-radius: 8px;
+      overflow: hidden;
+    }
+    .block-card-head {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 8px 14px;
+      background: #1e3a4a;
+    }
+    .block-idx { font-weight: 700; color: var(--blue); font-size: 0.9rem; }
+    .block-ts  { font-size: 0.72rem; color: var(--muted); }
+    .block-card-body {
+      padding: 12px 14px;
+      display: flex; flex-direction: column; gap: 6px;
+    }
+    .bc-row { display: flex; gap: 8px; align-items: flex-start; }
+    .bc-row .k { font-size: 0.72rem; color: var(--muted); min-width: 80px; padding-top: 2px; }
+    .bc-row .v { font-size: 0.82rem; word-break: break-all; }
+    .bc-row .v.hash { font-family: ui-monospace,monospace; font-size: 0.68rem; color: var(--hash-fg); }
+    .genesis-label { font-size: 0.85rem; color: var(--sub); }
+
+    /* ── analyzing indicator ────────────── */
+    .analyzing-banner {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      background: #091e35;
+      border: 1px solid #1e4a6a;
+      border-radius: 8px;
+      padding: 14px 18px;
+      margin-top: 12px;
+      color: var(--blue);
+      font-size: 0.9rem;
+      font-weight: 500;
+    }
+    .analyzing-step {
+      flex: 1;
+    }
+    .analyzing-step .step-label {
+      font-size: 0.78rem;
+      color: var(--muted);
+      margin-bottom: 2px;
+    }
+    .analyzing-step .step-text {
+      color: var(--blue);
+    }
+
+    /* 点滅ドット */
+    .pulse-dots {
+      display: flex;
+      gap: 5px;
+      flex-shrink: 0;
+    }
+    .pulse-dots span {
+      display: block;
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--blue);
+      animation: pulse-dot 1.4s ease-in-out infinite;
+    }
+    .pulse-dots span:nth-child(2) { animation-delay: 0.22s; }
+    .pulse-dots span:nth-child(3) { animation-delay: 0.44s; }
+
+    @keyframes pulse-dot {
+      0%, 80%, 100% { opacity: 0.15; transform: scale(0.75); }
+      40%            { opacity: 1;    transform: scale(1);    }
+    }
+
+    /* ── error banner ───────────────────── */
+    .error-banner {
+      background: #1f0d0d; border: 1px solid #7f1d1d;
+      border-radius: 6px; padding: 10px 14px;
+      color: #f87171; font-size: 0.88rem;
+      margin-bottom: 12px;
+    }
+
+    /* ── mock annotation ────────────────── */
+    .mock-note {
+      text-align: center;
+      color: var(--muted); font-size: 0.75rem;
+      margin-bottom: 32px;
+      padding: 8px 16px;
+      border: 1px dashed var(--border);
+      border-radius: 8px;
+    }
+  </style>
+</head>
+<body>
+<div id="app">
+
+  <!-- Mock annotation -->
+  <div class="mock-note">
+    ⚠️ これはUIモックアップです。インタラクションはデモ用で実際のAPIとは繋がっていません。
+  </div>
+
+  <!-- ── Header ──────────────────────────── -->
+  <header>
+    <h1>🎵 Audio Chain <span class="badge badge-blue">Prototype</span></h1>
+    <p class="h1-sub">音声解析 × ブロックチェーン記録 — Python + Node.js + Vue.js</p>
+  </header>
+
+  <!-- ── Section 1: Uploader ─────────────── -->
+  <div class="card" id="sec-upload">
+    <p class="section-title">音声ファイルをアップロード</p>
+
+    <!-- State A: 初期状態 -->
+    <div class="drop-zone" id="dropzone-empty">
+      <div class="file-icon">🎵</div>
+      <p class="hint">ここにファイルをドロップ、または</p>
+      <span class="btn-outline">ファイルを選択</span>
+    </div>
+
+    <!-- State B: ファイル選択済み（デモ表示） -->
+    <div class="drop-zone" id="dropzone-selected" style="display:none;">
+      <div class="file-icon">✅</div>
+      <p class="selected">sample_audio.wav</p>
+      <span class="btn-outline">別のファイルを選択</span>
+    </div>
+
+    <button class="btn-primary" id="analyze-btn" onclick="runDemo()">
+      解析 &amp; ブロックチェーンに記録
+    </button>
+  </div>
+
+  <!-- ── Analyzing indicator (hidden by default) ── -->
+  <div class="analyzing-banner" id="analyzing-indicator" style="display:none;">
+    <div class="pulse-dots">
+      <span></span><span></span><span></span>
+    </div>
+    <div class="analyzing-step">
+      <div class="step-label">解析中</div>
+      <div class="step-text" id="analyzing-step-text">音声ファイルを読み込んでいます...</div>
+    </div>
+  </div>
+
+  <!-- ── Error banner (hidden by default) ── -->
+  <div class="error-banner" id="error-banner" style="display:none;">
+    ⚠️ サーバーエラー: 音声ファイルの解析中にエラーが発生しました。
+  </div>
+
+  <!-- ── Section 2: Waveform ─────────────── -->
+  <div class="card" id="sec-waveform" style="display:none;">
+    <p class="section-title">波形</p>
+    <p style="font-size:0.82rem; color:var(--muted); margin-bottom:12px;">Duration: 12.345s</p>
+    <div class="waveform-wrap">
+      <canvas id="waveCanvas" height="140"></canvas>
+      <span class="duration-label">0s ─────────────── 12.3s</span>
+    </div>
+  </div>
+
+  <!-- ── Section 3: Features + Block info ── -->
+  <div class="card" id="sec-features" style="display:none;">
+    <p class="section-title">解析結果 &amp; ブロック情報</p>
+    <div class="features-grid">
+
+      <!-- 特徴量 -->
+      <div>
+        <p style="font-size:0.88rem; font-weight:600; color:#7dd3fc; margin-bottom:10px;">特徴量</p>
+        <div class="feature-list">
+          <div class="feature-item">
+            <span class="feat-label">Zero Crossing Rate</span>
+            <span class="feat-desc">音の粗さ・明瞭さ</span>
+            <span class="feat-val">0.045123</span>
+          </div>
+          <div class="feature-item">
+            <span class="feat-label">RMS Energy</span>
+            <span class="feat-desc">平均音量</span>
+            <span class="feat-val">0.031200</span>
+          </div>
+          <div class="feature-item">
+            <span class="feat-label">Spectral Centroid</span>
+            <span class="feat-desc">音の明るさ (Hz)</span>
+            <span class="feat-val">2134.56</span>
+          </div>
+          <div class="feature-item">
+            <span class="feat-label">Tempo</span>
+            <span class="feat-desc">テンポ (BPM)</span>
+            <span class="feat-val">120.00</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- ブロック情報 -->
+      <div>
+        <p style="font-size:0.88rem; font-weight:600; color:#7dd3fc; margin-bottom:10px;">ブロック情報</p>
+        <div class="block-info">
+          <div class="bi-row">
+            <span class="key">Index</span>
+            <span class="val">#1</span>
+          </div>
+          <div class="bi-row">
+            <span class="key">Timestamp</span>
+            <span class="val">2026-03-18T10:00:00.000Z</span>
+          </div>
+          <div class="bi-row">
+            <span class="key">Audio Hash</span>
+            <span class="val hash-val">a3f8c2d1e4b7920f5a1c3e8d2b6f0941c7e5a2d4b8f1930e6c4a7d2f0b5e9c3</span>
+          </div>
+          <div class="bi-row">
+            <span class="key">Block Hash</span>
+            <span class="val hash-val">9b2e4f0c6a8d1e3b7f5c9a2d4e6b0f8c3a5e7d1b9f2c4a6e8d0b3f5c7a9e1d</span>
+          </div>
+          <div class="bi-row">
+            <span class="key">Prev Hash</span>
+            <span class="val hash-val">0000000000000000000000000000000000000000000000000000000000000000</span>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ── Section 4: Blockchain viewer ─────── -->
+  <div class="card" id="sec-blockchain">
+    <div class="bc-header">
+      <div class="left">
+        <p class="section-title" style="margin-bottom:0;">ブロックチェーン</p>
+        <span class="badge badge-green" id="valid-badge">VALID</span>
+      </div>
+      <button class="btn-refresh">↻ 更新</button>
+    </div>
+
+    <div class="chain-list" id="chain-list">
+
+      <!-- Genesis block -->
+      <div class="block-card">
+        <div class="block-card-head">
+          <span class="block-idx">#0</span>
+          <span class="block-ts">2026-03-18T09:50:00.000Z</span>
+        </div>
+        <div class="block-card-body">
+          <span class="genesis-label">Genesis Block</span>
+          <div class="bc-row">
+            <span class="k">Block Hash</span>
+            <span class="v hash">000a1b2c3d4e5f6789abcdef0123456789abcdef0123456789abcdef01234567</span>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+</div><!-- /#app -->
+
+<script>
+  // ── デモ用ダミーデータ ──────────────────────────
+  const DEMO_WAVEFORM = (() => {
+    const arr = [];
+    for (let i = 0; i < 1000; i++) {
+      const t = i / 1000;
+      const v = Math.sin(t * Math.PI * 12) * 0.5
+              + Math.sin(t * Math.PI * 31) * 0.25
+              + (Math.random() - 0.5) * 0.15
+              + Math.sin(t * Math.PI * 5) * Math.exp(-t * 2) * 0.4;
+      arr.push(Math.max(-1, Math.min(1, v)));
+    }
+    return arr;
+  })();
+
+  const DEMO_BLOCK = {
+    index: 1,
+    timestamp: "2026-03-18T10:00:00.000Z",
+    data: { filename: "sample_audio.wav" },
+    previousHash: "000a1b2c3d4e5f6789abcdef0123456789abcdef0123456789abcdef01234567",
+    hash: "9b2e4f0c6a8d1e3b7f5c9a2d4e6b0f8c3a5e7d1b9f2c4a6e8d0b3f5c7a9e1d",
+  };
+
+  // ── Canvas 波形描画 ──────────────────────────────
+  function drawWaveform(data) {
+    const canvas = document.getElementById("waveCanvas");
+    const W = canvas.parentElement.clientWidth;
+    const H = 140;
+    canvas.width  = W;
+    canvas.height = H;
+    const ctx = canvas.getContext("2d");
+    ctx.clearRect(0, 0, W, H);
+
+    const step = W / data.length;
+    const mid  = H / 2;
+
+    // center line
+    ctx.beginPath();
+    ctx.strokeStyle = "#1e3a4a";
+    ctx.lineWidth = 0.5;
+    ctx.moveTo(0, mid); ctx.lineTo(W, mid);
+    ctx.stroke();
+
+    // waveform
+    const grad = ctx.createLinearGradient(0, 0, W, 0);
+    grad.addColorStop(0, "#38bdf8");
+    grad.addColorStop(1, "#818cf8");
+    ctx.beginPath();
+    ctx.strokeStyle = grad;
+    ctx.lineWidth = 1.2;
+    data.forEach((v, i) => {
+      const x = i * step;
+      const y = mid - v * mid * 0.9;
+      i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+    });
+    ctx.stroke();
+  }
+
+  // ── ブロックカードを追加 ─────────────────────────
+  function appendBlock(block) {
+    const list = document.getElementById("chain-list");
+    const card = document.createElement("div");
+    card.className = "block-card";
+    card.innerHTML = `
+      <div class="block-card-head">
+        <span class="block-idx">#${block.index}</span>
+        <span class="block-ts">${block.timestamp}</span>
+      </div>
+      <div class="block-card-body">
+        <div class="bc-row"><span class="k">Filename</span><span class="v">${block.data.filename}</span></div>
+        <div class="bc-row"><span class="k">Block Hash</span><span class="v hash">${block.hash}</span></div>
+        <div class="bc-row"><span class="k">Prev Hash</span><span class="v hash">${block.previousHash}</span></div>
+      </div>`;
+    list.appendChild(card);
+  }
+
+  // ── デモ実行 ─────────────────────────────────────
+  let demoRan = false;
+
+  const ANALYZING_STEPS = [
+    "音声ファイルを読み込んでいます...",
+    "librosa で波形・特徴量を解析中...",
+    "SHA-256 ハッシュを生成中...",
+    "ブロックチェーンに記録しています...",
+  ];
+
+  function runDemo() {
+    // ファイル選択済み表示に切り替え
+    document.getElementById("dropzone-empty").style.display = "none";
+    document.getElementById("dropzone-selected").style.display = "";
+
+    // ボタンをローディング状態に
+    const btn = document.getElementById("analyze-btn");
+    btn.textContent = "解析中…";
+    btn.classList.add("loading");
+    btn.disabled = true;
+
+    // インジケーターを表示し、ステップを順に切り替え
+    const indicator = document.getElementById("analyzing-indicator");
+    const stepText  = document.getElementById("analyzing-step-text");
+    indicator.style.display = "flex";
+    stepText.textContent = ANALYZING_STEPS[0];
+
+    const stepInterval = 450;
+    let stepIndex = 0;
+    const stepTimer = setInterval(() => {
+      stepIndex = Math.min(stepIndex + 1, ANALYZING_STEPS.length - 1);
+      stepText.textContent = ANALYZING_STEPS[stepIndex];
+    }, stepInterval);
+
+    setTimeout(() => {
+      clearInterval(stepTimer);
+      indicator.style.display = "none";
+
+      btn.textContent = "解析 & ブロックチェーンに記録";
+      btn.classList.remove("loading");
+      btn.disabled = false;
+
+      // 波形・特徴量・ブロック情報を表示
+      document.getElementById("sec-waveform").style.display = "";
+      document.getElementById("sec-features").style.display = "";
+      drawWaveform(DEMO_WAVEFORM);
+
+      // ブロックを追加（初回のみ）
+      if (!demoRan) {
+        appendBlock(DEMO_BLOCK);
+        demoRan = true;
+      }
+    }, 1800);
+  }
+
+  // ── ウィンドウリサイズ時に再描画 ──────────────────
+  window.addEventListener("resize", () => {
+    if (document.getElementById("sec-waveform").style.display !== "none") {
+      drawWaveform(DEMO_WAVEFORM);
+    }
+  });
+</script>
+</body>
+</html>
