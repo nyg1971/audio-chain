@@ -218,9 +218,13 @@ npm test
 | レイヤー | テスト数 | フレームワーク |
 |---------|---------|--------------|
 | Python | 24 | pytest |
-| Node.js | 40 | Jest + supertest |
-| Vue.js | 38 | Vitest + @vue/test-utils |
-| **合計** | **102** | |
+| Node.js | 42 | Jest + supertest |
+| Vue.js | 48 | Vitest + @vue/test-utils |
+| **合計** | **114** | |
+
+### カバレッジ
+
+各レイヤーにカバレッジ閾値を設定し、GitHub Actions で自動検証しています。
 
 ---
 

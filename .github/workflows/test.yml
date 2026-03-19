@@ -24,7 +24,7 @@ jobs:
         run: pip install pytest pytest-cov
 
       - name: Run tests with coverage
-        run: pytest python/test_analyze.py -v --cov=python/analyze --cov-report=term-missing
+        run: pytest python/test_analyze.py -v --cov=python/analyze --cov-branch --cov-report=term-missing
 
   node:
     name: Node.js Tests (Backend)
