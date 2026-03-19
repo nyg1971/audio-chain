@@ -10,6 +10,8 @@
 import sys
 import json
 import hashlib
+import warnings
+warnings.filterwarnings("ignore", category=UserWarning, module="numba")
 import numpy as np
 import librosa
 

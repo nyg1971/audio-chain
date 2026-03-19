@@ -42,7 +42,13 @@ function runPythonAnalysis(filePath) {
   return new Promise((resolve, reject) => {
     execFile("python3", [PYTHON_SCRIPT, filePath], { timeout: 60000 }, (err, stdout, stderr) => {
       if (err) {
-        reject(new Error(stderr || err.message));
+        // Python の例外ハンドラが stdout に {"error": "..."} を書いている場合はそちらを優先
+        try {
+          const parsed = JSON.parse(stdout);
+          reject(new Error(parsed.error || stderr || err.message));
+        } catch {
+          reject(new Error(stderr || err.message));
+        }
         return;
       }
       try {

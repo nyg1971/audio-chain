@@ -182,6 +182,62 @@ describe("AudioUploader", () => {
     expect(wrapper.find(".error-msg").text()).toContain("Network Error");
   });
 
+  // ── analyzing イベント ──────────────────────────────────
+
+  it("解析開始時に analyzing(true) をemitすること", async () => {
+    mockFetch.mockReturnValue(new Promise(() => {})); // 解決しない
+
+    const wrapper = mount(AudioUploader);
+    const file = new File(["audio"], "test.wav", { type: "audio/wav" });
+    const input = wrapper.find("input[type='file']");
+    Object.defineProperty(input.element, "files", { value: [file], configurable: true });
+    await input.trigger("change");
+
+    await wrapper.find("button").trigger("click");
+    await wrapper.vm.$nextTick();
+
+    const emitted = wrapper.emitted("analyzing");
+    expect(emitted).toBeTruthy();
+    expect(emitted[0]).toEqual([true]);
+  });
+
+  it("解析完了後に analyzing(false) をemitすること", async () => {
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({ analysis: { hash: "a".repeat(64), waveform: [], features: {} }, block: {}, chainValid: true }),
+    });
+
+    const wrapper = mount(AudioUploader);
+    const file = new File(["audio"], "test.wav", { type: "audio/wav" });
+    const input = wrapper.find("input[type='file']");
+    Object.defineProperty(input.element, "files", { value: [file], configurable: true });
+    await input.trigger("change");
+
+    await wrapper.find("button").trigger("click");
+    await flushPromises();
+
+    const emitted = wrapper.emitted("analyzing");
+    expect(emitted).toBeTruthy();
+    expect(emitted[emitted.length - 1]).toEqual([false]);
+  });
+
+  it("解析エラー時にも analyzing(false) をemitすること", async () => {
+    mockFetch.mockRejectedValueOnce(new Error("Network Error"));
+
+    const wrapper = mount(AudioUploader);
+    const file = new File(["audio"], "test.wav", { type: "audio/wav" });
+    const input = wrapper.find("input[type='file']");
+    Object.defineProperty(input.element, "files", { value: [file], configurable: true });
+    await input.trigger("change");
+
+    await wrapper.find("button").trigger("click");
+    await flushPromises();
+
+    const emitted = wrapper.emitted("analyzing");
+    expect(emitted).toBeTruthy();
+    expect(emitted[emitted.length - 1]).toEqual([false]);
+  });
+
   it("/api/analyze に POST することを確認すること", async () => {
     mockFetch.mockResolvedValueOnce({
       ok: true,

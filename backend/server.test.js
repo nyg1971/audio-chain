@@ -195,4 +195,66 @@ describe("POST /api/analyze", () => {
     const after = fs.readdirSync(uploadsDir).length;
     expect(after).toBe(before);
   });
+
+  // ── Python エラー系 ──────────────────────────────────────────
+
+  test("Pythonがエラー終了し stdout に {error} がある場合、そのメッセージで500を返すこと", async () => {
+    const { execFile } = require("child_process");
+    const fakeError = new Error("process exited with code 1");
+    fakeError.code = 1;
+    // stderrには警告テキスト、stdoutにはPythonの例外ハンドラが書いたJSON
+    execFile.mockImplementationOnce((cmd, args, opts, callback) => {
+      callback(
+        fakeError,
+        JSON.stringify({ error: "音声ファイルを読み込めませんでした" }),
+        "UserWarning: FNV hashing is not implemented in Numba."
+      );
+    });
+
+    const wavBuf = makeMinimalWavBuffer();
+    const res = await request(app)
+      .post("/api/analyze")
+      .attach("audio", wavBuf, { filename: "test.wav", contentType: "audio/wav" });
+
+    expect(res.status).toBe(500);
+    expect(res.body.error).toBe("音声ファイルを読み込めませんでした");
+  });
+
+  test("Pythonがエラー終了し stdout が空の場合、stderr のメッセージで500を返すこと", async () => {
+    const { execFile } = require("child_process");
+    const fakeError = new Error("process exited with code 1");
+    fakeError.code = 1;
+    execFile.mockImplementationOnce((cmd, args, opts, callback) => {
+      callback(fakeError, "", "ModuleNotFoundError: No module named 'librosa'");
+    });
+
+    const wavBuf = makeMinimalWavBuffer();
+    const res = await request(app)
+      .post("/api/analyze")
+      .attach("audio", wavBuf, { filename: "test.wav", contentType: "audio/wav" });
+
+    expect(res.status).toBe(500);
+    expect(res.body.error).toContain("ModuleNotFoundError");
+  });
+
+  test("Pythonエラー時もuploadsディレクトリにファイルが残らないこと", async () => {
+    const { execFile } = require("child_process");
+    const fakeError = new Error("process exited with code 1");
+    fakeError.code = 1;
+    execFile.mockImplementationOnce((cmd, args, opts, callback) => {
+      callback(fakeError, JSON.stringify({ error: "解析失敗" }), "");
+    });
+
+    const uploadsDir = path.join(__dirname, "uploads");
+    const before = fs.readdirSync(uploadsDir).length;
+
+    const wavBuf = makeMinimalWavBuffer();
+    await request(app)
+      .post("/api/analyze")
+      .attach("audio", wavBuf, { filename: "test.wav", contentType: "audio/wav" });
+
+    await new Promise((r) => setTimeout(r, 100));
+    const after = fs.readdirSync(uploadsDir).length;
+    expect(after).toBe(before);
+  });
 });

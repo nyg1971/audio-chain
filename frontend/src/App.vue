@@ -7,6 +7,7 @@ import { ref } from 'vue'
 
 const analysisResult = ref(null)
 const currentBlock = ref(null)
+const isAnalyzing = ref(false)
 
 function onAnalyzed({ analysis, block }) {
   analysisResult.value = analysis
@@ -23,13 +24,23 @@ function onAnalyzed({ analysis, block }) {
       </p>
     </header>
 
-    <AudioUploader @analyzed="onAnalyzed" />
+    <AudioUploader @analyzed="onAnalyzed" @analyzing="isAnalyzing = $event" />
 
     <template v-if="analysisResult">
-      <WaveformViewer :waveform="analysisResult.waveform" :duration="analysisResult.duration" />
-      <FeaturesViewer :features="analysisResult.features" :hash="analysisResult.hash" :block="currentBlock" />
+      <div :class="{ 'result-dimmed': isAnalyzing }">
+        <WaveformViewer :waveform="analysisResult.waveform" :duration="analysisResult.duration" />
+        <FeaturesViewer :features="analysisResult.features" :hash="analysisResult.hash" :block="currentBlock" />
+      </div>
     </template>
 
     <BlockchainViewer />
   </div>
 </template>
+
+<style>
+.result-dimmed {
+  opacity: 0.35;
+  pointer-events: none;
+  transition: opacity 0.2s;
+}
+</style>

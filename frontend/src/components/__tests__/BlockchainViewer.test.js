@@ -74,17 +74,26 @@ describe("BlockchainViewer", () => {
     expect(wrapper.text()).toContain("#1");
   });
 
-  it("ブロックのtimestampが表示されること", async () => {
+  it("ブロックのtimestampがJST形式で表示されること", async () => {
     mockValidChain([GENESIS]);
     const wrapper = mount(BlockchainViewer);
     await flushPromises();
-    expect(wrapper.text()).toContain("2026-03-18");
+    // UTC 09:00:00 → JST 18:00:00、スラッシュ区切りの日本語ロケール形式
+    expect(wrapper.text()).toContain("2026/03/18");
   });
 
-  it("ブロック1のfilenameが表示されること", async () => {
+  it("ブロック1のfilenameはヘッダークリック後に表示されること", async () => {
     mockValidChain([GENESIS, BLOCK1]);
     const wrapper = mount(BlockchainViewer);
     await flushPromises();
+
+    // デフォルト折りたたみ状態では非表示
+    expect(wrapper.text()).not.toContain("sample.wav");
+
+    // BLOCK1 のヘッダー（2番目）をクリックして展開
+    const headers = wrapper.findAll(".block-header");
+    await headers[1].trigger("click");
+
     expect(wrapper.text()).toContain("sample.wav");
   });
 
@@ -129,6 +138,64 @@ describe("BlockchainViewer", () => {
 
     expect(mockFetch).toHaveBeenCalledTimes(2);
     expect(wrapper.text()).toContain("#1");
+  });
+
+  // ── アコーディオン開閉 ──────────────────────────────────
+
+  it("デフォルトでブロック本文が非表示であること", async () => {
+    mockValidChain([GENESIS, BLOCK1]);
+    const wrapper = mount(BlockchainViewer);
+    await flushPromises();
+    expect(wrapper.find(".block-body").exists()).toBe(false);
+  });
+
+  it("ヘッダークリックでブロック本文が展開されること", async () => {
+    mockValidChain([GENESIS]);
+    const wrapper = mount(BlockchainViewer);
+    await flushPromises();
+
+    expect(wrapper.find(".block-body").exists()).toBe(false);
+    await wrapper.find(".block-header").trigger("click");
+    expect(wrapper.find(".block-body").exists()).toBe(true);
+  });
+
+  it("展開後に再クリックすると折りたたまれること", async () => {
+    mockValidChain([GENESIS]);
+    const wrapper = mount(BlockchainViewer);
+    await flushPromises();
+
+    const header = wrapper.find(".block-header");
+    await header.trigger("click");
+    expect(wrapper.find(".block-body").exists()).toBe(true);
+
+    await header.trigger("click");
+    expect(wrapper.find(".block-body").exists()).toBe(false);
+  });
+
+  it("展開時にシェブロンに .open クラスが付くこと", async () => {
+    mockValidChain([GENESIS]);
+    const wrapper = mount(BlockchainViewer);
+    await flushPromises();
+
+    const header = wrapper.find(".block-header");
+    expect(wrapper.find(".chevron").classes()).not.toContain("open");
+
+    await header.trigger("click");
+    expect(wrapper.find(".chevron").classes()).toContain("open");
+  });
+
+  it("複数ブロックを独立して開閉できること", async () => {
+    mockValidChain([GENESIS, BLOCK1]);
+    const wrapper = mount(BlockchainViewer);
+    await flushPromises();
+
+    const headers = wrapper.findAll(".block-header");
+    // BLOCK1 のみ展開
+    await headers[1].trigger("click");
+
+    const bodies = wrapper.findAll(".block-body");
+    expect(bodies).toHaveLength(1);
+    expect(bodies[0].text()).toContain("sample.wav");
   });
 
   // ── エラーハンドリング ──────────────────────────────────

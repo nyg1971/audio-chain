@@ -1,7 +1,7 @@
 <script setup>
 import { ref } from 'vue'
 
-const emit = defineEmits(['analyzed'])
+const emit = defineEmits(['analyzed', 'analyzing'])
 
 const isDragging = ref(false)
 const isLoading = ref(false)
@@ -36,6 +36,7 @@ async function analyze() {
   if (!selectedFile.value) return
   isLoading.value = true
   error.value = null
+  emit('analyzing', true)
 
   // ステップメッセージを順に切り替え
   let stepIndex = 0
@@ -62,6 +63,7 @@ async function analyze() {
     clearInterval(stepTimer)
     isLoading.value = false
     analyzingStep.value = ''
+    emit('analyzing', false)
   }
 }
 </script>
