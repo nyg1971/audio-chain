@@ -55,7 +55,7 @@
 ## ディレクトリ構成
 
 ```
-RD_anken/
+audio-chain/
 ├── backend/
 │   ├── server.js              # Expressサーバー（APIエンドポイント）
 │   ├── blockchain.js          # ブロックチェーンのローカルシミュレーション
@@ -70,16 +70,17 @@ RD_anken/
 │   └── test_analyze.py
 ├── frontend/
 │   ├── vite.config.js
-│   └── src/
-│       ├── App.vue
-│       ├── style.css
-│       └── components/
-│           ├── AudioUploader.vue
-│           ├── WaveformViewer.vue
-│           ├── FeaturesViewer.vue
-│           ├── BlockchainViewer.vue
-│           └── __tests__/
-├── mockup.html                # UIモックアップ（静的HTML）
+│   ├── src/
+│   │   ├── App.vue
+│   │   ├── style.css
+│   │   └── components/
+│   │       ├── AudioUploader.vue
+│   │       ├── WaveformViewer.vue
+│   │       ├── FeaturesViewer.vue
+│   │       ├── BlockchainViewer.vue
+│   │       └── __tests__/
+│   └── mockup/
+│       └── mockup.html        # UIモックアップ（静的HTML）
 └── .gitignore
 ```
 
