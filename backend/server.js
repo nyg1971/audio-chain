@@ -116,7 +116,9 @@ app.get("/api/blockchain", (req, res) => {
 });
 
 // テスト時は listen しない（supertest が内部で管理するため）
+/* istanbul ignore next */
 if (require.main === module) {
+  /* istanbul ignore next */
   app.listen(PORT, () => {
     console.log(`Backend running at http://localhost:${PORT}`);
   });

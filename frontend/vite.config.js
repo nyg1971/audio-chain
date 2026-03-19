@@ -12,5 +12,14 @@ export default defineConfig({
   test: {
     environment: 'jsdom',
     globals: true,
+    coverage: {
+      provider: 'v8',
+      thresholds: {
+        lines: 75,
+        branches: 85,
+        functions: 55,
+        statements: 75,
+      },
+    },
   },
 })

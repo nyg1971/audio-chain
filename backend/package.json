@@ -16,5 +16,15 @@
     "nodemon": "^3.0.2",
     "jest": "^29.7.0",
     "supertest": "^6.3.4"
+  },
+  "jest": {
+    "coverageThreshold": {
+      "global": {
+        "lines": 90,
+        "branches": 65,
+        "functions": 95,
+        "statements": 90
+      }
+    }
   }
 }

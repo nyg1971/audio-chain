@@ -34,7 +34,7 @@ def analyze(filepath: str) -> dict:
     # 波形データ（表示用にダウンサンプリング: 最大1000点）
     n_samples = len(y)
     step = max(1, n_samples // 1000)
-    waveform = y[::step].tolist()
+    waveform = y[::step].tolist()[:1000]
 
     # 基本情報
     duration = librosa.get_duration(y=y, sr=sr)

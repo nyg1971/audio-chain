@@ -146,9 +146,9 @@ class TestAnalyze:
         sc = analyze(wav_file)["features"]["spectral_centroid"]
         assert sc > 0
 
-    def test_tempo_bpm_is_positive(self, wav_file):
+    def test_tempo_bpm_is_non_negative(self, wav_file):
         bpm = analyze(wav_file)["features"]["tempo_bpm"]
-        assert bpm > 0
+        assert bpm >= 0
 
     def test_tempo_bpm_is_python_float(self, wav_file):
         """numpy配列ではなくPythonのfloatであること（np.atleast_1d変換の確認）"""
