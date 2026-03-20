@@ -246,9 +246,9 @@ npm test
 
 | フェーズ | 内容 |
 |---------|------|
-| Phase 1 | Ethereumテストネット（Sepolia）接続・スマートコントラクトによる記録 |
+| Phase 1 | 永続化（SQLite等）・CORS制限・セキュリティ改善 |
 | Phase 2 | 解析エンジンのFastAPI化（マイクロサービス構成への移行） |
-| Phase 3 | リアルタイム音声解析・マルチユーザー対応 |
+| Phase 3 | Ethereumテストネット（Sepolia）接続・スマートコントラクトによる記録 ※現行の独自ブロックチェーン実装を全面置き換え・Solidity / ethers.js 導入が必要 |
 
 ---
 

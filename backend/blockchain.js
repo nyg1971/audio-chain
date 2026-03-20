@@ -10,6 +10,8 @@ class Block {
   }
 
   calculateHash() {
+    // TODO(BE-009): 文字列結合はフィールド境界が曖昧になりハッシュ衝突のリスクがある
+    // → JSON.stringify でオブジェクトごとシリアライズする方式に変更予定
     const content =
       this.index +
       this.timestamp +
