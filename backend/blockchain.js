@@ -10,13 +10,14 @@ class Block {
   }
 
   calculateHash() {
-    // TODO(BE-009): 文字列結合はフィールド境界が曖昧になりハッシュ衝突のリスクがある
-    // → JSON.stringify でオブジェクトごとシリアライズする方式に変更予定
-    const content =
-      this.index +
-      this.timestamp +
-      JSON.stringify(this.data) +
-      this.previousHash;
+    // JSON.stringify でオブジェクトごとシリアライズ
+    // → キー名が区切りとして機能しフィールド境界の曖昧さを排除
+    const content = JSON.stringify({
+      index: this.index,
+      timestamp: this.timestamp,
+      data: this.data,
+      previousHash: this.previousHash,
+    });
     return crypto.createHash("sha256").update(content).digest("hex");
   }
 }
@@ -56,4 +57,6 @@ class Blockchain {
   }
 }
 
-module.exports = new Blockchain();
+const instance = new Blockchain();
+
+module.exports = { Block, Blockchain, instance };

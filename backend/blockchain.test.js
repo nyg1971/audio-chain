@@ -3,9 +3,7 @@
  * 実行: npm test (backend/)
  */
 
-// blockchain.js はシングルトンなので、テストごとに新しいインスタンスを使いたい
-// モジュールキャッシュをクリアしてリセット可能にする
-const { Block, Blockchain } = require("./__testHelpers__/blockchainFactory");
+const { Block, Blockchain } = require("./blockchain");
 
 // ─── Block クラス ────────────────────────────────────────────
 
