@@ -215,10 +215,10 @@ npm test
 
 | レイヤー | テスト数 | フレームワーク |
 |---------|---------|--------------|
-| Python | 24 | pytest |
-| Node.js | 43 | Jest + supertest |
+| Python | 28 | pytest |
+| Node.js | 62 | Jest + supertest |
 | Vue.js | 48 | Vitest + @vue/test-utils |
-| **合計** | **115** | |
+| **合計** | **138** | |
 
 ### カバレッジ
 
