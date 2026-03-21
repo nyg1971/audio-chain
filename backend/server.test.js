@@ -68,6 +68,11 @@ describe("GET /api/blockchain", () => {
     expect(typeof res.body.length).toBe("number");
   });
 
+  test("lengthがchain配列の実際の長さと一致すること", async () => {
+    const res = await request(app).get("/api/blockchain");
+    expect(res.body.length).toBe(res.body.chain.length);
+  });
+
   test("isValidフィールドを含むこと", async () => {
     const res = await request(app).get("/api/blockchain");
     expect(typeof res.body.isValid).toBe("boolean");
@@ -135,12 +140,79 @@ describe("POST /api/analyze", () => {
     expect(res.body.analysis).toHaveProperty("hash");
   });
 
+  test("analysis.durationが正の値であること", async () => {
+    const wavBuf = makeMinimalWavBuffer();
+    const res = await request(app)
+      .post("/api/analyze")
+      .attach("audio", wavBuf, { filename: "test.wav", contentType: "audio/wav" });
+    expect(res.body.analysis.duration).toBeGreaterThan(0);
+  });
+
+  test("analysis.waveformが配列であること", async () => {
+    const wavBuf = makeMinimalWavBuffer();
+    const res = await request(app)
+      .post("/api/analyze")
+      .attach("audio", wavBuf, { filename: "test.wav", contentType: "audio/wav" });
+    expect(Array.isArray(res.body.analysis.waveform)).toBe(true);
+  });
+
+  test("analysis.featuresの全キーが存在すること", async () => {
+    const wavBuf = makeMinimalWavBuffer();
+    const res = await request(app)
+      .post("/api/analyze")
+      .attach("audio", wavBuf, { filename: "test.wav", contentType: "audio/wav" });
+    const features = res.body.analysis.features;
+    for (const key of ["mfcc_mean", "zero_crossing_rate", "rms_energy", "spectral_centroid", "tempo_bpm"]) {
+      expect(features).toHaveProperty(key);
+    }
+  });
+
   test("blockフィールドを含むこと", async () => {
     const wavBuf = makeMinimalWavBuffer();
     const res = await request(app)
       .post("/api/analyze")
       .attach("audio", wavBuf, { filename: "test.wav", contentType: "audio/wav" });
     expect(res.body).toHaveProperty("block");
+  });
+
+  test("block.data.filenameが元のファイル名と一致すること", async () => {
+    const wavBuf = makeMinimalWavBuffer();
+    const res = await request(app)
+      .post("/api/analyze")
+      .attach("audio", wavBuf, { filename: "test.wav", contentType: "audio/wav" });
+    expect(res.body.block.data.filename).toBe("test.wav");
+  });
+
+  test("block.data.audioHashがanalysis.hashと一致すること", async () => {
+    const wavBuf = makeMinimalWavBuffer();
+    const res = await request(app)
+      .post("/api/analyze")
+      .attach("audio", wavBuf, { filename: "test.wav", contentType: "audio/wav" });
+    expect(res.body.block.data.audioHash).toBe(res.body.analysis.hash);
+  });
+
+  test("block.data.filesizeが数値であること", async () => {
+    const wavBuf = makeMinimalWavBuffer();
+    const res = await request(app)
+      .post("/api/analyze")
+      .attach("audio", wavBuf, { filename: "test.wav", contentType: "audio/wav" });
+    expect(typeof res.body.block.data.filesize).toBe("number");
+  });
+
+  test("block.data.durationがanalysis.durationと一致すること", async () => {
+    const wavBuf = makeMinimalWavBuffer();
+    const res = await request(app)
+      .post("/api/analyze")
+      .attach("audio", wavBuf, { filename: "test.wav", contentType: "audio/wav" });
+    expect(res.body.block.data.duration).toBe(res.body.analysis.duration);
+  });
+
+  test("block.data.featuresが存在すること", async () => {
+    const wavBuf = makeMinimalWavBuffer();
+    const res = await request(app)
+      .post("/api/analyze")
+      .attach("audio", wavBuf, { filename: "test.wav", contentType: "audio/wav" });
+    expect(res.body.block.data).toHaveProperty("features");
   });
 
   test("blockのindexが1以上であること", async () => {
@@ -208,6 +280,21 @@ describe("POST /api/analyze", () => {
 
   // ── Python エラー系 ──────────────────────────────────────────
 
+  test("Pythonが正常終了したが stdout が不正なJSONの場合に500を返すこと", async () => {
+    const { execFile } = require("child_process");
+    execFile.mockImplementationOnce((cmd, args, opts, callback) => {
+      callback(null, "not valid json", "");
+    });
+
+    const wavBuf = makeMinimalWavBuffer();
+    const res = await request(app)
+      .post("/api/analyze")
+      .attach("audio", wavBuf, { filename: "test.wav", contentType: "audio/wav" });
+
+    expect(res.status).toBe(500);
+    expect(res.body.error).toContain("Pythonの出力をパースできませんでした");
+  });
+
   test("Pythonがエラー終了し stdout に {error} がある場合、そのメッセージで500を返すこと", async () => {
     const { execFile } = require("child_process");
     const fakeError = new Error("process exited with code 1");
@@ -245,6 +332,33 @@ describe("POST /api/analyze", () => {
 
     expect(res.status).toBe(500);
     expect(res.body.error).toContain("ModuleNotFoundError");
+  });
+
+  // ── LIMIT_FILE_SIZE エラーハンドラ ──────────────────────────
+
+  test("ファイルサイズ超過時に400を返しerrorフィールドを含むこと", (done) => {
+    jest.isolateModules(() => {
+      jest.mock("multer", () => {
+        const m = () => ({
+          single: () => (req, res, next) => {
+            const err = new Error("File too large");
+            err.code = "LIMIT_FILE_SIZE";
+            next(err);
+          },
+        });
+        m.diskStorage = () => ({});
+        return m;
+      });
+      const limitApp = require("./server");
+      request(limitApp)
+        .post("/api/analyze")
+        .attach("audio", Buffer.from("x"), { filename: "big.wav", contentType: "audio/wav" })
+        .expect(400)
+        .expect((res) => {
+          expect(res.body).toHaveProperty("error");
+        })
+        .end(done);
+    });
   });
 
   test("Pythonエラー時もuploadsディレクトリにファイルが残らないこと", async () => {
