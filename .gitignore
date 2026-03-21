@@ -5,6 +5,7 @@ npm-debug.log*
 # ── Backend ───────────────────────────────
 backend/uploads/*
 !backend/uploads/.gitkeep
+backend/coverage/
 
 # ── Frontend (Vite build) ─────────────────
 frontend/dist/

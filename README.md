@@ -61,8 +61,6 @@ audio-chain/
 │   ├── blockchain.js          # ブロックチェーンのローカルシミュレーション
 │   ├── blockchain.test.js
 │   ├── server.test.js
-│   ├── __testHelpers__/
-│   │   └── blockchainFactory.js
 │   └── uploads/               # 一時ファイル保存先（解析後即削除）
 ├── python/
 │   ├── analyze.py             # 音声解析スクリプト
@@ -218,9 +216,9 @@ npm test
 | レイヤー | テスト数 | フレームワーク |
 |---------|---------|--------------|
 | Python | 24 | pytest |
-| Node.js | 42 | Jest + supertest |
+| Node.js | 43 | Jest + supertest |
 | Vue.js | 48 | Vitest + @vue/test-utils |
-| **合計** | **114** | |
+| **合計** | **115** | |
 
 ### カバレッジ
 

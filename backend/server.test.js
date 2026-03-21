@@ -169,6 +169,16 @@ describe("POST /api/analyze", () => {
     expect(res.status).toBe(400);
   });
 
+  test("拡張子は .mp3 だが mimetype が不正なファイルで400を返すこと", async () => {
+    const res = await request(app)
+      .post("/api/analyze")
+      .attach("audio", Buffer.from("not audio"), {
+        filename: "malicious.mp3",
+        contentType: "text/plain",
+      });
+    expect(res.status).toBe(400);
+  });
+
   test("Pythonに渡すファイルパスに元の拡張子が含まれること", async () => {
     const { execFile } = require("child_process");
     const wavBuf = makeMinimalWavBuffer();

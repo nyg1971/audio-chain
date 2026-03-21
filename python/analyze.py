@@ -11,6 +11,8 @@ import sys
 import json
 import hashlib
 import warnings
+# librosa は import 時に numba を内部で読み込み UserWarning を出すため、
+# import librosa の直前に記述する必要がある（順序に意味がある）
 warnings.filterwarnings("ignore", category=UserWarning, module="numba")
 import numpy as np
 import librosa

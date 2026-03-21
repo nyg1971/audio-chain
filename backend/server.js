@@ -4,7 +4,7 @@ const cors = require("cors");
 const path = require("path");
 const { execFile } = require("child_process");
 const fs = require("fs");
-const blockchain = require("./blockchain");
+const { instance: blockchain } = require("./blockchain");
 
 const app = express();
 const PORT = 3001;
@@ -12,9 +12,15 @@ const PORT = 3001;
 app.use(cors());
 app.use(express.json());
 
+// uploads/ ディレクトリが存在しない場合は自動生成
+const uploadDir = path.join(__dirname, "uploads");
+if (!fs.existsSync(uploadDir)) {
+  fs.mkdirSync(uploadDir, { recursive: true });
+}
+
 // アップロード先設定
 const storage = multer.diskStorage({
-  destination: path.join(__dirname, "uploads"),
+  destination: uploadDir,
   filename: (req, file, cb) => {
     const ext = path.extname(file.originalname).toLowerCase();
     cb(null, `${Date.now()}-${Math.random().toString(36).slice(2)}${ext}`);
@@ -25,14 +31,31 @@ const upload = multer({
   storage,
   limits: { fileSize: 50 * 1024 * 1024 }, // 50MB
   fileFilter: (req, file, cb) => {
-    const allowed = ["audio/mpeg", "audio/wav", "audio/ogg", "audio/flac", "audio/x-wav"];
-    if (allowed.includes(file.mimetype) || file.originalname.match(/\.(mp3|wav|ogg|flac)$/i)) {
+    const allowed = [
+      "audio/mpeg", "audio/mp3",      // MP3
+      "audio/wav",  "audio/x-wav",    // WAV
+      "audio/ogg",                    // OGG
+      "audio/flac", "audio/x-flac",   // FLAC
+    ];
+    if (allowed.includes(file.mimetype) && file.originalname.match(/\.(mp3|wav|ogg|flac)$/i)) {
       cb(null, true);
     } else {
-      cb(new Error("音声ファイル（mp3, wav, ogg, flac）のみアップロード可能です"));
+      const err = new Error("音声ファイル（mp3, wav, ogg, flac）のみアップロード可能です");
+      err.code = "INVALID_FILE_TYPE";
+      cb(err);
     }
   },
 });
+
+// ファイル存在チェックミドルウェア
+const requireFile = (req, res, next) => {
+  if (!req.file) {
+    const err = new Error("音声ファイルをアップロードしてください");
+    err.code = "NO_FILE";
+    return next(err);
+  }
+  next();
+};
 
 // Python スクリプトのパス
 const PYTHON_SCRIPT = path.join(__dirname, "../python/analyze.py");
@@ -61,19 +84,11 @@ function runPythonAnalysis(filePath) {
 }
 
 // POST /api/analyze — 音声ファイルをアップロードして解析
-app.post("/api/analyze", upload.single("audio"), async (req, res) => {
-  if (!req.file) {
-    return res.status(400).json({ error: "音声ファイルをアップロードしてください" });
-  }
-
+app.post("/api/analyze", upload.single("audio"), requireFile, async (req, res) => {
   const uploadedPath = req.file.path;
 
   try {
     const analysisResult = await runPythonAnalysis(uploadedPath);
-
-    if (analysisResult.error) {
-      return res.status(500).json({ error: analysisResult.error });
-    }
 
     // ブロックチェーンに記録
     const blockData = {
@@ -98,9 +113,18 @@ app.post("/api/analyze", upload.single("audio"), async (req, res) => {
   }
 });
 
-// multer のファイル形式・サイズエラーを 400 として返す
+// アップロード系エラーを一元管理
 app.use((err, req, res, next) => {
-  if (err.message && (err.code === "LIMIT_FILE_SIZE" || err.message.includes("のみアップロード可能"))) {
+  // ファイルが残っていれば削除（LIMIT_FILE_SIZE 時のみ req.file が存在する）
+  /* istanbul ignore next */
+  if (req.file) {
+    fs.unlink(req.file.path, () => {});
+  }
+  if (
+    err.code === "LIMIT_FILE_SIZE" ||
+    err.code === "INVALID_FILE_TYPE" ||
+    err.code === "NO_FILE"
+  ) {
     return res.status(400).json({ error: err.message });
   }
   next(err);
